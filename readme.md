@@ -9,34 +9,7 @@ Using PromptFlow, you can have an LLM convert a workflow or knowledge process or
 One of the simplest: a self-review pattern: LLM generates an output, and then reviews its output an edits it according to some criteria.
 
 ```json
-{
-  "FSMName": "Review Process Flow",
-  "InitialState": "Generate Initial Response",
-   "States": [
-     "Generate Initial Response",
-     "Peer Review",
-     "Summarize Reviews",
-     "Finalize Review"
-   ],
-    "Transitions": [
-      {
-        "CurrentState": "Generate Initial Response",
-        "Event": "Response Created",
-        "NextState": "Peer Review"
-      },
-      {
-        "CurrentState": "Peer Review",
-        "Event": "Reviews Collected",
-        "NextState": "Summarize Reviews"
-      },
-      {
-        "CurrentState": "Summarize Reviews",
-        "Event": "Summary Complete",
-        "NextState": "Finalize Review"
-      }
-  ],
-  "FinalState": "Finalize Review"
-}
+
 ```
 
 ## PromptFlow schema
@@ -45,52 +18,31 @@ All PromptFlow objects follow this schema (note that these can get incredibly co
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "properties": {
-    "FSMName": {
-      "type": "string",
-      "description": "The name of the Finite State Machine."
+  "workflowName": "Name of the workflow",
+  "initialState": "Starting point of the workflow",
+  "statesDescription": [
+    {
+      "state": "State 1",
+      "description": "Description of State 1"
     },
-    "InitialState": {
-      "type": "string",
-      "description": "The initial state from which the FSM starts."
-    },
-    "States": {
-      "type": "array",
-      "description": "A list of all states within the FSM.",
-      "items": {
-        "type": "string"
-      }
-    },
-    "Transitions": {
-      "type": "array",
-      "description": "A list of transitions between states based on events.",
-      "items": {
-        "type": "object",
-        "properties": {
-          "CurrentState": {
-            "type": "string",
-            "description": "The state from which the transition originates."
-          },
-          "Event": {
-            "type": "string",
-            "description": "The event that triggers the transition."
-      },
-          "NextState": {
-            "type": "string",
-            "description": "The state to which the transition leads."
-          }
-        },
-        "required": ["CurrentState", "Event", "NextState"]
-      }
-    },
-    "FinalState": {
-      "type": "string",
-      "description": "The final state of the FSM."
+    {
+      "state": "State 2",
+      "description": "Description of State 2"
     }
-  },
-  "required": ["FSMName", "InitialState", "States", "Transitions", "FinalState"]
+  ],
+  "transitions": [
+    {
+      "currentState": "State 1",
+      "event": "Event triggering transition from State 1 to State 2",
+      "nextState": "State 2"
+    },
+    {
+      "currentState": "State 2",
+      "event": "Event triggering transition from State 2 to Final State",
+      "nextState": "Final State"
+    }
+  ],
+  "finalState": "Ending point or final state of the workflow"
 }
 ```
 
