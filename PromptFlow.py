@@ -15,9 +15,13 @@ The story
 # Import the necessary libraries
 # ----------------------------------------
 
+from Chain import Prompt, Chain, Model, Parser
 from pydantic import BaseModel
-from typing import List
+from typing import List, Union				# Union allows for multiple possible types
 import json
+
+# Anthropic excels at these sorts of tasks, and Claude Sonnet 3.5 is the strongest model released as of 6/23.
+preferred_model = "claude" 
 
 # Create an example process for the chain. This is from Sophie.
 # ----------------------------------------
@@ -51,7 +55,6 @@ Sophie Inc.'s business model will be to sell to large companies, so they will fo
 # ----------------------------------------
 
 persona_workflow_analyst = """
-
 You are a Workflow Analyst at a large company, and your primary responsibility is to analyze and understand business processes or challenges and create a structured processDescription object that captures all the essential information about the workflow.
 You will receive a detailed description of a business process or problem as plain text. Your task is to carefully read through the description, identify the key components, and extract the necessary information to populate the processDescription object.
 The processDescription object should include the following properties:
@@ -68,35 +71,36 @@ Your output should strictly adhere to the following JSON schema:
 {{processDescription_schema}}
 
 Ensure that all required properties are populated based on the information provided in the input description. If any required information is missing or unclear, make reasonable assumptions or inferences based on the context, but avoid introducing unsupported claims.
-"""
+""".strip()
 
 persona_promptflow_architect = """
 You are a systems architect at a large company, and your full time job is to convert detailed descriptions of workflows into PromptFlow objects.
 
-A PromptFlow is a finite state machine, rendered in JSON. A PromptFlow, when given to a machine, can be rendered into the following:
+A PromptFlow is a finite state machine, rendered in JSON. A PromptFlow, when given to a machine, can be rendered into a variety of workflows, for example:
 - a dialogue flow for customer service chatbots
 - manufacturing instructions for a factory
 - a software development pipeline
 - a data analysis pipeline (i.e. data cleaning, transformation, and analysis)
 
-You are given a detailed description of a business process.
-
-Based on your analysis, you translate the workflow into a PromptFlow object. PromptFlow utilizes a finite state machine (FSM) structure, represented in JSON format.
-
-Each state in the FSM corresponds to a specific stage in the workflow. You define transitions between states based on decision points and potential outcomes.
+This is your job:
+- You are given a detailed description of a business process.
+- Based on your analysis, you translate the workflow into a PromptFlow object. PromptFlow utilizes a finite state machine (FSM) structure,
+represented in JSON format.
+- Each state in the FSM corresponds to a specific stage in the workflow. You define transitions between states based on decision points
+and potential outcomes.
 
 Your answers should always be a structured PromptFlow json object, with no extra text or ornaments.
 
 Here's the schema for a PromptFlow object.
 
 {{PromptFlow_schema}}
-"""
+""".strip()
 
 # define our prompts: processDescription and PromptFlow
 # ----------------------------------------
 
 process_description_prompt = """
-Create processDescription object
+You've received a request to generate a processDescription object.
 
 A colleague has come to you with this description of what they want modeled:
 
@@ -105,16 +109,15 @@ A colleague has come to you with this description of what they want modeled:
 ==========
 
 As always, please strictly follow your instructions to generate a processDescription json object. Please ensure that your response adheres to the processDescription JSON schema.
-"""
+""".strip()
 
 promptflow_prompt = """
-
-You've received a request to generate a PromptFlow object. Here's the description you've been given:
+You've received a request to generate a PromptFlow object. Here's the process description you've been given:
 
 {{processDescription}}
 
 As always, please strictly follow your instructions to generate a PromptFlow json object. Please ensure that your response adheres to the PromptFlow json schema.
-"""
+""".strip()
 
 # Now, our schemas for the processDescription and PromptFlow objects.
 # ----------------------------------------
@@ -149,7 +152,7 @@ PromptFlow_schema = """
 }
 """
 
-processDiscussion_schema = """
+processDescription_schema = """
 {
   "type": "object",
   "properties": {
@@ -247,6 +250,22 @@ def convert_json_to_promptflow(json_data: dict) -> PromptFlow:
 	"""Converts a JSON object to a PromptFlow object."""
 	return PromptFlow(**json_data)
 
+def pretty(structured_data: Union[str, PromptFlow, ProcessDescription, dict]) -> str:
+	"""
+	Takes structured data (string, PromptFlow object, or dictionary) and returns a pretty-printed string representation.
+	By definition, these are equivalent types for PromptFlow.
+	"""
+	if isinstance(structured_data, str):
+		structured_data = json.loads(structured_data)
+		structured_data = json.dumps(structured_data, indent=2)
+		return structured_data
+	elif isinstance(structured_data, BaseModel):
+		return json.dumps(structured_data.__dict__, indent=2)
+	elif isinstance(structured_data, dict):
+		return json.dumps(structured_data, indent=2)
+	else:
+		raise ValueError("Unsupported type for pretty printing. Supported types: str, PromptFlow, ProcessDescription, dict")
+
 def generate_mermaid_diagram(prompt_flow: PromptFlow) -> str:
 	"""
 	Generates a Mermaid diagram string for a given PromptFlow object.
@@ -273,71 +292,61 @@ def generate_mermaid_diagram(prompt_flow: PromptFlow) -> str:
 	diagram += f'    style {prompt_flow.finalState} fill:#ccf,stroke:#f66,stroke-width:2px\n'
 	return diagram
 
-# Our Chain
+# Create Chains
 # ----------------------------------------
 
-example_prompt_flow = """
-{
-  "workflowName": "Conversational AI",
-  "initialState": "human_input",
-  "statesDescription": [
-	{
-	  "state": "human_input",
-	  "description": "Initial state where the user provides input and has command options."
-	},
-	{
-	  "state": "machine_evaluates_human_input",
-	  "description": "The machine evaluates the human input and decides the next action."
-	},
-	{
-	  "state": "machine_queries_database",
-	  "description": "The machine queries the database for the requested information."
-	},
-	{
-	  "state": "machine_receives_database_query",
-	  "description": "The machine receives the database query result and responds to the human."
-	}
-  ],
-  "transitions": [
-	{
-	  "currentState": "human_input",
-	  "event": "User provides input",
-	  "nextState": "machine_evaluates_human_input"
-	},
-	{
-	  "currentState": "machine_evaluates_human_input",
-	  "event": "Action: Search_Courses",
-	  "nextState": "machine_queries_database"
-	},
-	{
-	  "currentState": "machine_evaluates_human_input",
-	  "event": "Action: Respond_To_Human",
-	  "nextState": "human_input"
-	},
-	{
-	  "currentState": "machine_evaluates_human_input",
-	  "event": "Action: No_Action",
-	  "nextState": "human_input"
-	},
-	{
-	  "currentState": "machine_queries_database",
-	  "event": "Database query initiated",
-	  "nextState": "machine_receives_database_query"
-	},
-	{
-	  "currentState": "machine_receives_database_query",
-	  "event": "Database query result received",
-	  "nextState": "human_input"
-	}
-  ],
-  "finalState": "process_complete"
-}
-"""
+def analyze_workflow_description(natural_language_description: str) -> ProcessDescription:
+	"""Analyzes a natural language description of a workflow and generates a ProcessDescription object."""
+	messages = Chain.create_messages(system_prompt = persona_workflow_analyst, input = {'processDescription_schema': processDescription_schema})
+	prompt = Prompt(process_description_prompt)
+	model = Model(preferred_model)
+	parser = Parser("json")
+	chain = Chain(prompt, model, parser)
+	response = chain.run(messages = messages, input = natural_language_description)
+	process_description_obj = ProcessDescription(**response.content)	
+	return process_description_obj
+
+def generate_promptflow(process_description: ProcessDescription) -> PromptFlow:
+	"""Generates a PromptFlow object based on a ProcessDescription object."""
+	messages = Chain.create_messages(system_prompt = persona_promptflow_architect, input = {'PromptFlow_schema': PromptFlow_schema})
+	prompt = Prompt(promptflow_prompt)
+	model = Model(preferred_model)
+	parser = Parser("json")
+	chain = Chain(prompt, model, parser)
+	process_description_string = json.dumps(process_description.__dict__)
+	response = chain.run(messages = messages, input = process_description_string)
+	promptflow_object = PromptFlow(**response.content)
+	return promptflow_object
+
+# Main function
+# ----------------------------------------
+
+def main():
+	# Analyze the natural language description of the workflow
+	print("Analyzing the natural language description of the workflow...")
+	process_description = analyze_workflow_description(natural_language_description)
+	# Generate a PromptFlow object based on the ProcessDescription
+	print("Our architect is now generating a PromptFlow object...")
+	promptflow_object = generate_promptflow(process_description)
+	# Show results
+	print("\n=====================================================")
+	print("Results")
+	print("=====================================================\n")
+	try:
+		print(pretty(promptflow_object))
+	except Exception as e:
+		print("Error printing the PromptFlow object.")
+		print(e)
+	print("\n=====================================================")
+	print("Mermaid Diagram")
+	print("=====================================================\n")
+	print(generate_mermaid_diagram(promptflow_object))
 
 if __name__ == "__main__":
-	# Convert the example JSON to a PromptFlow object
-	prompt_flow = convert_json_to_promptflow(json.loads(example_prompt_flow))
-	# Generate a Mermaid diagram from the PromptFlow object
-	mermaid_diagram = generate_mermaid_diagram(prompt_flow)
-	# Print the Mermaid diagram
-	print(mermaid_diagram)
+	main()
+
+# a completed result for testing purposes
+# process_description = ProcessDescription(**{'processDescription': 'The process involves generating 100 text-based courses for a company called Sophie Inc. These courses will be structured consistently, with each course containing approximately 4 chapters, 12-15 sections, and a total word count of 18,000-22,500 words. The courses will cover various topics in business and technology, targeting different professional audiences.', 'keyObjectives': ['Generate 100 text-based courses', 'Maintain consistent course structure across all courses', 'Cover a range of business and technology topics', 'Target specific professional audiences', 'Create content suitable for sale to large companies'], 'participantsAndRoles': ['Content creators: Responsible for writing and structuring the course material', 'Subject matter experts: Provide expertise in specific business and technology areas', 'Editors: Review and refine the course content', 'Project managers: Oversee the course creation process and ensure consistency', 'Sales team: Sell the courses to large companies'], 'decisionPoints': ['Selection of specific topics within each course category', 'Allocation of courses across different segments (e.g., 20 for Leadership and Management)', 'Determining the exact number of sections per chapter (3-4)', 'Finalizing the word count for each section (~1500 words)', 'Choosing which large companies to target for sales'], 'challengesOrIssues': ['Maintaining consistency in quality and structure across 100 courses', 'Ensuring content relevance for different professional audiences', 'Balancing depth and breadth of topics within word count constraints', 'Keeping content up-to-date, especially for technology-related courses', 'Differentiating courses from existing online learning platforms'], 'desiredOutcomes': ['Create a comprehensive library of 100 high-quality, structured courses', 'Attract large companies as customers for the course library', 'Meet the learning needs of various professional audiences', 'Establish Sophie Inc. as a reputable provider of business and technology education', 'Generate revenue through course sales to large companies'], 'additionalInformation': "Sophie Inc.'s course library will be divided into six segments: Leadership and Management (20 courses), Professional Development (15 courses), Business Functions (15 courses), Business software (10 courses), Software development (20 courses), and IT administration (20 courses). The courses are designed to address the needs of people managers, career changers, and professionals seeking to improve in their current roles."})
+
+
+
