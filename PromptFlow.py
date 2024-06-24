@@ -23,6 +23,60 @@ import json
 # Anthropic excels at these sorts of tasks, and Claude Sonnet 3.5 is the strongest model released as of 6/23.
 preferred_model = "claude" 
 
+complex_mermaid_example = """
+graph TD
+    ProjectInitiation("Project Initiation: Set up project teams, define goals, and establish timelines")
+    StakeholderReview("Stakeholder Review: Get approval on project scope and objectives")
+    CoursePlanning("Course Planning: Define course categories, topics, and audience segments")
+    ContentCreation("Content Creation: Write and structure course material")
+    ExpertReview("Expert Review: Subject matter experts review content")
+    EditingQA("Editing and Quality Assurance")
+    FinalReview("Final Review: Project managers conduct final review")
+    SalesPreparation("Sales Preparation: Brief sales team")
+    CourseFinalization("Course Finalization: Prepare for delivery")
+    ClientFeedback("Client Feedback: Gather and analyze client responses")
+    RevisionPlanning("Revision Planning: Plan updates based on feedback")
+
+    ProjectInitiation -->|Project setup complete| StakeholderReview
+    StakeholderReview -->|Approved| CoursePlanning
+    StakeholderReview -->|Revisions needed| ProjectInitiation
+    CoursePlanning -->|Course outlines ready| ContentCreation
+    ContentCreation -->|Initial draft complete| ExpertReview
+    ExpertReview -->|Major changes needed| ContentCreation
+    ExpertReview -->|Minor changes or approved| EditingQA
+    EditingQA -->|Quality standards not met| ContentCreation
+    EditingQA -->|Editing complete| FinalReview
+    FinalReview -->|Changes required| EditingQA
+    FinalReview -->|Approved| SalesPreparation
+    SalesPreparation -->|Sales team briefed| CourseFinalization
+    CourseFinalization -->|Courses launched| ClientFeedback
+    ClientFeedback -->|Significant updates needed| RevisionPlanning
+    ClientFeedback -->|Minor updates needed| EditingQA
+    RevisionPlanning -->|Revision plan approved| CoursePlanning
+
+    subgraph "Quality Control Loop"
+        ExpertReview
+        EditingQA
+        FinalReview
+    end
+
+    subgraph "Collaboration Loop"
+        ContentCreation
+        ExpertReview
+        EditingQA
+    end
+
+    subgraph "Continuous Improvement Loop"
+        ClientFeedback
+        RevisionPlanning
+        CoursePlanning
+    end
+
+    style ProjectInitiation fill:#f9f,stroke:#333,stroke-width:4px
+    style CourseFinalization fill:#ccf,stroke:#f66,stroke-width:2px
+    style ClientFeedback fill:#ffc,stroke:#f66,stroke-width:2px
+"""
+
 # Create an example process for the chain. This is from Sophie.
 # ----------------------------------------
 
@@ -347,6 +401,3 @@ if __name__ == "__main__":
 
 # a completed result for testing purposes
 # process_description = ProcessDescription(**{'processDescription': 'The process involves generating 100 text-based courses for a company called Sophie Inc. These courses will be structured consistently, with each course containing approximately 4 chapters, 12-15 sections, and a total word count of 18,000-22,500 words. The courses will cover various topics in business and technology, targeting different professional audiences.', 'keyObjectives': ['Generate 100 text-based courses', 'Maintain consistent course structure across all courses', 'Cover a range of business and technology topics', 'Target specific professional audiences', 'Create content suitable for sale to large companies'], 'participantsAndRoles': ['Content creators: Responsible for writing and structuring the course material', 'Subject matter experts: Provide expertise in specific business and technology areas', 'Editors: Review and refine the course content', 'Project managers: Oversee the course creation process and ensure consistency', 'Sales team: Sell the courses to large companies'], 'decisionPoints': ['Selection of specific topics within each course category', 'Allocation of courses across different segments (e.g., 20 for Leadership and Management)', 'Determining the exact number of sections per chapter (3-4)', 'Finalizing the word count for each section (~1500 words)', 'Choosing which large companies to target for sales'], 'challengesOrIssues': ['Maintaining consistency in quality and structure across 100 courses', 'Ensuring content relevance for different professional audiences', 'Balancing depth and breadth of topics within word count constraints', 'Keeping content up-to-date, especially for technology-related courses', 'Differentiating courses from existing online learning platforms'], 'desiredOutcomes': ['Create a comprehensive library of 100 high-quality, structured courses', 'Attract large companies as customers for the course library', 'Meet the learning needs of various professional audiences', 'Establish Sophie Inc. as a reputable provider of business and technology education', 'Generate revenue through course sales to large companies'], 'additionalInformation': "Sophie Inc.'s course library will be divided into six segments: Leadership and Management (20 courses), Professional Development (15 courses), Business Functions (15 courses), Business software (10 courses), Software development (20 courses), and IT administration (20 courses). The courses are designed to address the needs of people managers, career changers, and professionals seeking to improve in their current roles."})
-
-
-

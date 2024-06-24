@@ -4,17 +4,111 @@ A **PromptFlow** object is a JSON representation of a workflow or decision-makin
 
 Using PromptFlow, you can have an LLM convert a workflow or knowledge process or framework into a prompt flow architecture.
 
+![A compass rose in stormy seas](Pasted image 20240622215955.png)
+
+### A Standard with many uses!
+- PromptFlows are FSMs, JSON objects, and mermaid diagrams -- you can **convert losslessly between the three formats.**
+- `PromptFlow.py` uses pydantic, json parsers, chains, and clever prompting where a Workflow Analyst and a PromptFlow architect collaborate to **map out a concrete business workflow (i.e. a PromptFlow object) from a natural language description of a business challenge.**
+- The **PromptFlow schema** can be used to prompt LLMs, including Claude/GPT-4o. You can have them convert flowcharts into PromptFlow; a drawing into a mermaid diagram, etc.l
+- A PromptFlow can be used to generate an entire chatbot flow; the end goal of the PromptFlow project is to have agents create workflows on the fly; imagine an extended framework where system personas are defined, prompts are created, and you can **stand up the entire chain programmatically.**
+
 ## Example
 
 One of the simplest: a self-review pattern: LLM generates an output, and then reviews its output an edits it according to some criteria.
 
 ```json
-
+{
+  "FSMName": "Review Process Flow",
+  "InitialState": "Generate Initial Response",
+  "States": [
+    "Generate Initial Response",
+    "Peer Review",
+    "Summarize Reviews",
+    "Finalize Review"
+  ],
+  "Transitions": [
+    {
+      "CurrentState": "Generate Initial Response",
+      "Event": "Response Created",
+      "NextState": "Peer Review"
+    },
+    {
+      "CurrentState": "Peer Review",
+      "Event": "Reviews Collected",
+      "NextState": "Summarize Reviews"
+    },
+    {
+      "CurrentState": "Summarize Reviews",
+      "Event": "Summary Complete",
+      "NextState": "Finalize Review"
+    }
+  ],
+  "FinalState": "Finalize Review"
+}
 ```
 
-## PromptFlow schema
+### processDiscussion object Schema
 
-All PromptFlow objects follow this schema (note that these can get incredibly complex).
+```json
+{
+  "type": "object",
+  "properties": {
+    "processDescription": {
+      "type": "string",
+      "description": "A detailed narrative of the overall process or challenge."
+    },
+    "keyObjectives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The main objectives or goals of the process."
+    },
+    "participantsAndRoles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The individuals involved in the process and their roles."
+    },
+    "decisionPoints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Critical decision points within the process."
+    },
+    "challengesOrIssues": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The main challenges or issues encountered during the process."
+    },
+    "desiredOutcomes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The desired outcomes upon completing the process."
+    },
+    "additionalInformation": {
+      "type": "string",
+      "description": "Any additional information that might help in understanding the process better."
+    }
+  },
+  "required": [
+    "processDescription",
+    "keyObjectives",
+    "participantsAndRoles",
+    "decisionPoints",
+    "challengesOrIssues",
+    "desiredOutcomes"
+  ]
+}
+```
+
+### PromptFlow object Schema
 
 ```json
 {
@@ -46,114 +140,73 @@ All PromptFlow objects follow this schema (note that these can get incredibly co
 }
 ```
 
-## Example implementation
+### Create processDescription object
 
-Since PromptFlow objects are FSMs, they can be interpreted into an entire application architecture. These fit very well with a State-Driven Programming paradigm.
+```
+A colleague has come to you with this description of what they want modeled:
 
-We will follow an example of a librarian that has access to a database. This is a chat flow where the librarian is able to query the database (i.e. a vector database full of embeddings) to fulfill a user query.
+==========
+{natural_language_description}
+==========
 
-### processDescription
-
-We have a related json schema for a processDescription -- this is a halfway point between a natural language description of a process and the PromptFlow architect who actually generates the object. This processDescription is a structured + simplified description of the task, which the PromptFlow architect uses to create their object.
-
-```json
-{
-  "processDescription": "The RAG Librarian is a conversational AI system that assists users in searching for information related to courses. The system interacts with the user by accepting input, evaluating the input to determine the appropriate action, querying a database if necessary, and providing a response to the user.",
-  "keyObjectives": [
-    "Provide a user-friendly interface for users to interact with the RAG Librarian.",
-    "Evaluate user input to determine the appropriate action.",
-    "Query a database to retrieve course-related information when requested.",
-    "Respond to the user with the requested information or a suitable message."
-  ],
-  "participantsAndRoles": [
-    "User: Interacts with the RAG Librarian by providing input and receiving responses.",
-    "RAG Librarian: Evaluates user input, queries the database if necessary, and generates responses to the user."
-  ],
-  "decisionPoints": [
-    "Evaluate user input to determine the action: Search_Courses, Respond_To_Human, or No_Action.",
-    "Decide whether to query the database based on the user's input."
-  ],
-  "challengesOrIssues": [
-    "Handling diverse user inputs and determining the appropriate action.",
-    "Integrating with the database to retrieve course-related information.",
-    "Generating meaningful and accurate responses to the user's queries."
-  ],
-  "desiredOutcomes": [
-    "Users can easily interact with the RAG Librarian to search for course-related information.",
-    "The system accurately evaluates user input and takes the appropriate action.",
-    "The database is queried efficiently to retrieve the requested information.",
-    "The RAG Librarian provides clear and helpful responses to the user's queries."
-  ],
-  "additionalInformation": "The RAG Librarian is designed to be a user-friendly tool for accessing course-related information. It can be enhanced with additional features such as natural language processing, more sophisticated database queries, and integration with other systems."
-}
+As always, please strictly follow your instructions to generate a processDescription json object. Please ensure that your response adheres to the processDescription JSON schema.
 ```
 
-### PromptFlow Object
+### Create PromptFlow Object prompt
 
-Our PromptFlow Architect takes in the processDescription and generates a consistent finite state machine -- i.e. the PromptFlow!
+```
+You've received a request to generate a PromptFlow object. Here's the description you've been given:
 
-```json
-{
-  "workflowName": "RAG Librarian",
-  "initialState": "human_input",
-  "statesDescription": [
-    {
-      "state": "human_input",
-      "description": "Initial state where the user provides input and has command options."
-    },
-    {
-      "state": "machine_evaluates_human_input",
-      "description": "The machine evaluates the human input and decides the next action."
-    },
-    {
-      "state": "machine_queries_database",
-      "description": "The machine queries the database for the requested information."
-    },
-    {
-      "state": "machine_receives_database_query",
-      "description": "The machine receives the database query result and responds to the human."
-    }
-  ],
-  "transitions": [
-    {
-      "currentState": "human_input",
-      "event": "User provides input",
-      "nextState": "machine_evaluates_human_input"
-    },
-    {
-      "currentState": "machine_evaluates_human_input",
-      "event": "Action: Search_Courses",
-      "nextState": "machine_queries_database"
-    },
-    {
-      "currentState": "machine_evaluates_human_input",
-      "event": "Action: Respond_To_Human",
-      "nextState": "human_input"
-    },
-    {
-      "currentState": "machine_evaluates_human_input",
-      "event": "Action: No_Action",
-      "nextState": "human_input"
-    },
-    {
-      "currentState": "machine_queries_database",
-      "event": "Database query initiated",
-      "nextState": "machine_receives_database_query"
-    },
-    {
-      "currentState": "machine_receives_database_query",
-      "event": "Database query result received",
-      "nextState": "human_input"
-    }
-  ],
-  "finalState": null
-}
+{{processDescription}}
+
+As always, please strictly follow your instructions to generate a PromptFlow json object. Please ensure that your response adheres to the PromptFlow json schema.
 ```
 
-### Mermaid diagram
+### System Prompt: Workflow Analyst
 
-PromptFlow objects, as FSMs, have a 1:1 relationship with Mermaid FSM diagrams. A valid PromptFlow object can always be rendered as a mermaid diagram, and a mermaid diagram that is a valid FSM can always be rendered as a PromptFlow object.
+```
+You are a Workflow Analyst at a large company, and your primary responsibility is to analyze and understand business processes or challenges and create a structured processDescription object that captures all the essential information about the workflow.
+You will receive a detailed description of a business process or problem as plain text. Your task is to carefully read through the description, identify the key components, and extract the necessary information to populate the processDescription object.
+The processDescription object should include the following properties:
 
+processDescription: A concise summary of the overall process or challenge.
+keyObjectives: A list of the main objectives or goals of the process.
+participantsAndRoles: A list of the individuals or roles involved in the process and their responsibilities.
+decisionPoints: A list of critical decision points within the process where choices or approvals are required.
+challengesOrIssues: A list of the main challenges, bottlenecks, or issues encountered during the process.
+desiredOutcomes: A list of the desired outcomes or results expected upon completing the process.
+additionalInformation: Any additional relevant information that helps in understanding the process better.
+
+Your output should strictly adhere to the following JSON schema:
+{{processDescription_schema}}
+
+Ensure that all required properties are populated based on the information provided in the input description. If any required information is missing or unclear, make reasonable assumptions or inferences based on the context, but avoid introducing unsupported claims.
+```
+
+## System Prompt: PromptFlow designer
+
+```
+You are a systems architect at a large company, and your full time job is to convert detailed descriptions of workflows into PromptFlow objects.
+
+A PromptFlow is a finite state machine, rendered in JSON. A PromptFlow, when given to a machine, can be rendered into the following:
+- a dialogue flow for customer service chatbots
+- manufacturing instructions for a factory
+- a software development pipeline
+- a data analysis pipeline (i.e. data cleaning, transformation, and analysis)
+
+You are given a detailed description of a business process.
+
+Based on your analysis, you translate the workflow into a PromptFlow object. PromptFlow utilizes a finite state machine (FSM) structure, represented in JSON format.
+
+Each state in the FSM corresponds to a specific stage in the workflow. You define transitions between states based on decision points and potential outcomes.
+
+Your answers should always be a structured PromptFlow json object, with no extra text or ornaments.
+
+Here's the schema for a PromptFlow object.
+
+{{PromptFlow_schema}}
+```
+### Example Mermaid diagram
 ```mermaid
 graph TD
    A[Human Input] --> B{Machine Evaluates Human Input}
@@ -164,84 +217,18 @@ graph TD
    D --> A
 ```
 
-### Python code boilerplate
-
-PromptFlow objects, as FMS, also have a 1:1 relationship with this Python boilerplate. Functions and event handling are generated on the fly to create this state-driven program.
-
-```python
-def human_input():
-    """
-    Square one -- we return here after machine does all its work.
-    User has some command options.
-    """
-    while True:
-        user_input = input("You: ")
-        match user_input:
-            case "exit":
-                return "Exiting..."
-            case "/show system":
-                print('============================\n' + 
-                    system_prompt +
-                    '\n============================\n')
-                continue
-            case "/show model":
-                print(model.model)
-                continue
-            case "/show messages":
-                print('============================\n' + 
-                    '\n\n'.join([str(m) for m in messages]) +
-                    '\n============================\n')
-                continue
-            case "/help":
-                print("""
-                Type 'exit' to leave the chat.
-                Type '/show system' to see the system prompt.
-                Type '/show model' to see the model.
-                Type '/show messages' to see the conversation.
-                """)
-                continue
-            case _:
-                break
-    return machine_evaluates_human_input
-
-def machine_evaluates_human_input():
-    """
-    Machine takes human input and decides to either
-    1. Respond to the human
-    2. Query the database
-    """
-    match action:
-        case "Search_Courses":
-            return machine_queries_database
-        case "Respond_To_Human":
-            return human_input
-            input
-        case "No_Action":
-            return human_input
-        case _:
-            error = "Error: Unrecognized action."
-            return error
-
-def machine_queries_database():
-    """
-    Machine queries the database for the requested information.
-    """
-    return machine_receives_database_query
-
-def machine_receives_database_query():
-    """
-    Here the machine receives the database query and responds to the human.
-    """
-    return human_input
-
-if __name__ == "__main__":
-    current_state = human_input  # Start with the initial state
-    messages = [{'role': 'system', 'content': system_prompt}]
-    print("Let's chat! Type 'exit' to leave.")
-    while True:
-        # If the current state is not callable, it's an error. Print and break.
-        if not callable(current_state):
-            print(current_state)
-            break
-        current_state = current_state()
+```mermaid
+graph TD
+    human_input("human_input: Initial state where the user provides input and has command options.")
+    machine_evaluates_human_input("machine_evaluates_human_input: The machine evaluates the human input and decides the next action.")
+    machine_queries_database("machine_queries_database: The machine queries the database for the requested information.")
+    machine_receives_database_query("machine_receives_database_query: The machine receives the database query result and responds to the human.")
+    human_input -->|User provides input| machine_evaluates_human_input
+    machine_evaluates_human_input -->|Action: Search_Courses| machine_queries_database
+    machine_evaluates_human_input -->|Action: Respond_To_Human| human_input
+    machine_evaluates_human_input -->|Action: No_Action| human_input
+    machine_queries_database -->|Database query initiated| machine_receives_database_query
+    machine_receives_database_query -->|Database query result received| human_input
+    style human_input fill:#f9f,stroke:#333,stroke-width:4px
+    style process_complete fill:#ccf,stroke:#f66,stroke-width:2px
 ```
