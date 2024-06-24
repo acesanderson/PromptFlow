@@ -4,7 +4,7 @@ A **PromptFlow** object is a JSON representation of a workflow or decision-makin
 
 Using PromptFlow, you can have an LLM convert a workflow or knowledge process or framework into a prompt flow architecture.
 
-![A compass rose in stormy seas](./assets/image.png)
+<img src="./assets/image.png" width="300" alt="A compass rose in stormy seas">
 
 ### A Standard with many uses!
 - PromptFlows are FSMs, JSON objects, and mermaid diagrams -- you can **convert losslessly between the three formats.**
