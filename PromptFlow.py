@@ -407,18 +407,18 @@ def generate_mermaid_diagram(prompt_flow: PromptFlow) -> str:
 
 def analyze_workflow_description(natural_language_description: str) -> ProcessDescription:
 	"""Analyzes a natural language description of a workflow and generates a ProcessDescription object."""
-	messages = Chain.create_messages(system_prompt = persona_workflow_analyst, input = {'processDescription_schema': processDescription_schema})
+	messages = Chain.create_messages(system_prompt = persona_workflow_analyst, input_variables = {'processDescription_schema': processDescription_schema})
 	prompt = Prompt(process_description_prompt)
 	model = Model(preferred_model)
 	parser = Parser("json")
 	chain = Chain(prompt, model, parser)
-	response = chain.run(messages = messages, input = natural_language_description)
+	response = chain.run(messages = messages, input_variables = natural_language_description)
 	process_description_obj = ProcessDescription(**response.content)	
 	return process_description_obj
 
 def generate_promptflow(process_description: ProcessDescription) -> PromptFlow:
 	"""Generates a PromptFlow object based on a ProcessDescription object."""
-	messages = Chain.create_messages(system_prompt = persona_promptflow_architect, input = {'PromptFlow_schema': PromptFlow_schema})
+	messages = Chain.create_messages(system_prompt = persona_promptflow_architect, input_variables = {'PromptFlow_schema': PromptFlow_schema})
 	prompt = Prompt(promptflow_prompt)
 	model = Model(preferred_model)
 	parser = Parser("json")
