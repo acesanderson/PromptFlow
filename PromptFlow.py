@@ -17,64 +17,65 @@ The story
 
 from Chain import Prompt, Chain, Model, Parser
 from pydantic import BaseModel
-from typing import List, Union				# Union allows for multiple possible types
+from typing import List, Union
 import json
 
 # Anthropic excels at these sorts of tasks, and Claude Sonnet 3.5 is the strongest model released as of 6/23.
 preferred_model = "claude" 
+# preferred_model = "gpt" 
 
 complex_mermaid_example = """
 graph TD
-    ProjectInitiation("Project Initiation: Set up project teams, define goals, and establish timelines")
-    StakeholderReview("Stakeholder Review: Get approval on project scope and objectives")
-    CoursePlanning("Course Planning: Define course categories, topics, and audience segments")
-    ContentCreation("Content Creation: Write and structure course material")
-    ExpertReview("Expert Review: Subject matter experts review content")
-    EditingQA("Editing and Quality Assurance")
-    FinalReview("Final Review: Project managers conduct final review")
-    SalesPreparation("Sales Preparation: Brief sales team")
-    CourseFinalization("Course Finalization: Prepare for delivery")
-    ClientFeedback("Client Feedback: Gather and analyze client responses")
-    RevisionPlanning("Revision Planning: Plan updates based on feedback")
+	ProjectInitiation("Project Initiation: Set up project teams, define goals, and establish timelines")
+	StakeholderReview("Stakeholder Review: Get approval on project scope and objectives")
+	CoursePlanning("Course Planning: Define course categories, topics, and audience segments")
+	ContentCreation("Content Creation: Write and structure course material")
+	ExpertReview("Expert Review: Subject matter experts review content")
+	EditingQA("Editing and Quality Assurance")
+	FinalReview("Final Review: Project managers conduct final review")
+	SalesPreparation("Sales Preparation: Brief sales team")
+	CourseFinalization("Course Finalization: Prepare for delivery")
+	ClientFeedback("Client Feedback: Gather and analyze client responses")
+	RevisionPlanning("Revision Planning: Plan updates based on feedback")
 
-    ProjectInitiation -->|Project setup complete| StakeholderReview
-    StakeholderReview -->|Approved| CoursePlanning
-    StakeholderReview -->|Revisions needed| ProjectInitiation
-    CoursePlanning -->|Course outlines ready| ContentCreation
-    ContentCreation -->|Initial draft complete| ExpertReview
-    ExpertReview -->|Major changes needed| ContentCreation
-    ExpertReview -->|Minor changes or approved| EditingQA
-    EditingQA -->|Quality standards not met| ContentCreation
-    EditingQA -->|Editing complete| FinalReview
-    FinalReview -->|Changes required| EditingQA
-    FinalReview -->|Approved| SalesPreparation
-    SalesPreparation -->|Sales team briefed| CourseFinalization
-    CourseFinalization -->|Courses launched| ClientFeedback
-    ClientFeedback -->|Significant updates needed| RevisionPlanning
-    ClientFeedback -->|Minor updates needed| EditingQA
-    RevisionPlanning -->|Revision plan approved| CoursePlanning
+	ProjectInitiation -->|Project setup complete| StakeholderReview
+	StakeholderReview -->|Approved| CoursePlanning
+	StakeholderReview -->|Revisions needed| ProjectInitiation
+	CoursePlanning -->|Course outlines ready| ContentCreation
+	ContentCreation -->|Initial draft complete| ExpertReview
+	ExpertReview -->|Major changes needed| ContentCreation
+	ExpertReview -->|Minor changes or approved| EditingQA
+	EditingQA -->|Quality standards not met| ContentCreation
+	EditingQA -->|Editing complete| FinalReview
+	FinalReview -->|Changes required| EditingQA
+	FinalReview -->|Approved| SalesPreparation
+	SalesPreparation -->|Sales team briefed| CourseFinalization
+	CourseFinalization -->|Courses launched| ClientFeedback
+	ClientFeedback -->|Significant updates needed| RevisionPlanning
+	ClientFeedback -->|Minor updates needed| EditingQA
+	RevisionPlanning -->|Revision plan approved| CoursePlanning
 
-    subgraph "Quality Control Loop"
-        ExpertReview
-        EditingQA
-        FinalReview
-    end
+	subgraph "Quality Control Loop"
+		ExpertReview
+		EditingQA
+		FinalReview
+	end
 
-    subgraph "Collaboration Loop"
-        ContentCreation
-        ExpertReview
-        EditingQA
-    end
+	subgraph "Collaboration Loop"
+		ContentCreation
+		ExpertReview
+		EditingQA
+	end
 
-    subgraph "Continuous Improvement Loop"
-        ClientFeedback
-        RevisionPlanning
-        CoursePlanning
-    end
+	subgraph "Continuous Improvement Loop"
+		ClientFeedback
+		RevisionPlanning
+		CoursePlanning
+	end
 
-    style ProjectInitiation fill:#f9f,stroke:#333,stroke-width:4px
-    style CourseFinalization fill:#ccf,stroke:#f66,stroke-width:2px
-    style ClientFeedback fill:#ffc,stroke:#f66,stroke-width:2px
+	style ProjectInitiation fill:#f9f,stroke:#333,stroke-width:4px
+	style CourseFinalization fill:#ccf,stroke:#f66,stroke-width:2px
+	style ClientFeedback fill:#ffc,stroke:#f66,stroke-width:2px
 """
 
 # Create an example process for the chain. This is from Sophie.
@@ -167,36 +168,36 @@ Here's the enhanced schema for a PromptFlow object:
   "workflowName": "Name of the workflow",
   "initialState": "Starting point of the workflow",
   "statesDescription": [
-    {
-      "state": "State 1",
-      "description": "Description of State 1",
-      "type": "process/decision/review/parallel"
-    },
-    {
-      "state": "State 2",
-      "description": "Description of State 2",
-      "type": "process/decision/review/parallel"
-    }
+	{
+	  "state": "State 1",
+	  "description": "Description of State 1",
+	  "type": "process/decision/review/parallel"
+	},
+	{
+	  "state": "State 2",
+	  "description": "Description of State 2",
+	  "type": "process/decision/review/parallel"
+	}
   ],
   "transitions": [
-    {
-      "currentState": "State 1",
-      "event": "Event triggering transition",
-      "nextState": "State 2",
-      "condition": "Optional condition for transition"
-    },
-    {
-      "currentState": "State 2",
-      "event": "Event triggering transition",
-      "nextState": "State 1",
-      "condition": "Optional condition for transition"
-    }
+	{
+	  "currentState": "State 1",
+	  "event": "Event triggering transition",
+	  "nextState": "State 2",
+	  "condition": "Optional condition for transition"
+	},
+	{
+	  "currentState": "State 2",
+	  "event": "Event triggering transition",
+	  "nextState": "State 1",
+	  "condition": "Optional condition for transition"
+	}
   ],
   "parallelStates": [
-    {
-      "parentState": "Parallel Parent State",
-      "childStates": ["Child State 1", "Child State 2"]
-    }
+	{
+	  "parentState": "Parallel Parent State",
+	  "childStates": ["Child State 1", "Child State 2"]
+	}
   ],
   "finalState": "Ending point or final state of the workflow"
 }
@@ -362,19 +363,48 @@ def convert_json_to_promptflow(json_data: dict) -> PromptFlow:
 
 def pretty(structured_data: Union[str, PromptFlow, ProcessDescription, dict]) -> str:
 	"""
-	Takes structured data (string, PromptFlow object, or dictionary) and returns a pretty-printed string representation.
-	By definition, these are equivalent types for PromptFlow.
+	Takes structured data (string, PromptFlow object, ProcessDescription object, or dictionary) 
+	and returns a pretty-printed string representation.
 	"""
 	if isinstance(structured_data, str):
-		structured_data = json.loads(structured_data)
-		structured_data = json.dumps(structured_data, indent=2)
-		return structured_data
-	elif isinstance(structured_data, BaseModel):
-		return json.dumps(structured_data.__dict__, indent=2)
-	elif isinstance(structured_data, dict):
+		try:
+			structured_data = json.loads(structured_data)
+		except json.JSONDecodeError:
+			return structured_data
+	
+	if isinstance(structured_data, (PromptFlow, ProcessDescription)):
+		# Convert Pydantic model to dict, handling nested Pydantic objects
+		def pydantic_to_dict(obj):
+			if isinstance(obj, BaseModel):
+				return {k: pydantic_to_dict(v) for k, v in obj.dict().items()}
+			elif isinstance(obj, list):
+				return [pydantic_to_dict(item) for item in obj]
+			else:
+				return obj
+		
+		structured_data = pydantic_to_dict(structured_data)
+	
+	if isinstance(structured_data, dict):
 		return json.dumps(structured_data, indent=2)
-	else:
-		raise ValueError("Unsupported type for pretty printing. Supported types: str, PromptFlow, ProcessDescription, dict")
+	
+	raise ValueError("Unsupported type for pretty printing. Supported types: str, PromptFlow, ProcessDescription, dict")
+
+
+# def pretty(structured_data: Union[str, PromptFlow, ProcessDescription, dict]) -> str:
+# 	"""
+# 	Takes structured data (string, PromptFlow object, or dictionary) and returns a pretty-printed string representation.
+# 	By definition, these are equivalent types for PromptFlow.
+# 	"""
+# 	if isinstance(structured_data, str):
+# 		structured_data = json.loads(structured_data)
+# 		structured_data = json.dumps(structured_data, indent=2)
+# 		return structured_data
+# 	elif isinstance(structured_data, BaseModel):
+# 		return json.dumps(structured_data.__dict__, indent=2)
+# 	elif isinstance(structured_data, dict):
+# 		return json.dumps(structured_data, indent=2)
+# 	else:
+# 		raise ValueError("Unsupported type for pretty printing. Supported types: str, PromptFlow, ProcessDescription, dict")
 
 def generate_mermaid_diagram(prompt_flow: PromptFlow) -> str:
 	"""
@@ -386,20 +416,25 @@ def generate_mermaid_diagram(prompt_flow: PromptFlow) -> str:
 	Returns:
 	str: A string containing the Mermaid diagram.
 	"""
+	def flatten(string):
+		"""
+		We need to replace spaces with underscores to diagram can render properly.
+		"""
+		return string.replace(" ", "_")
 	# Start the Mermaid diagram
 	diagram = "graph TD\n"
 	# Add states with descriptions as nodes
 	for state in prompt_flow.statesDescription:
 		# Each state node in Mermaid can have a text label which might include a description
-		diagram += f'    {state.state}("{state.state}: {state.description}")\n'
+		diagram += f'    {flatten(state.state)}("{flatten(state.state)}: {flatten(state.description)}")\n'
 	# Define transitions
 	for transition in prompt_flow.transitions:
 		# Each transition in Mermaid is represented as an edge between nodes
-		line = f'    {transition.currentState} -->|{transition.event}| {transition.nextState}'
+		line = f'    {flatten(transition.currentState)} -->|{flatten(transition.event)}| {flatten(transition.nextState)}'
 		diagram += line + '\n'
 	# Optionally, add a special style for the initial and final states
-	diagram += f'    style {prompt_flow.initialState} fill:#f9f,stroke:#333,stroke-width:4px\n'
-	diagram += f'    style {prompt_flow.finalState} fill:#ccf,stroke:#f66,stroke-width:2px\n'
+	diagram += f'    style {flatten(prompt_flow.initialState)} fill:#f9f,stroke:#333,stroke-width:4px\n'
+	diagram += f'    style {flatten(prompt_flow.finalState)} fill:#ccf,stroke:#f66,stroke-width:2px\n'
 	return diagram
 
 # Create Chains
@@ -410,10 +445,10 @@ def analyze_workflow_description(natural_language_description: str) -> ProcessDe
 	messages = Chain.create_messages(system_prompt = persona_workflow_analyst, input_variables = {'processDescription_schema': processDescription_schema})
 	prompt = Prompt(process_description_prompt)
 	model = Model(preferred_model)
-	parser = Parser("json")
+	parser = Parser(ProcessDescription)
 	chain = Chain(prompt, model, parser)
 	response = chain.run(messages = messages, input_variables = natural_language_description)
-	process_description_obj = ProcessDescription(**response.content)	
+	process_description_obj = response.content	
 	return process_description_obj
 
 def generate_promptflow(process_description: ProcessDescription) -> PromptFlow:
@@ -421,18 +456,15 @@ def generate_promptflow(process_description: ProcessDescription) -> PromptFlow:
 	messages = Chain.create_messages(system_prompt = persona_promptflow_architect, input_variables = {'PromptFlow_schema': PromptFlow_schema})
 	prompt = Prompt(promptflow_prompt)
 	model = Model(preferred_model)
-	parser = Parser("json")
+	parser = Parser(PromptFlow)
 	chain = Chain(prompt, model, parser)
-	process_description_string = json.dumps(process_description.__dict__)
-	response = chain.run(messages = messages, input = process_description_string)
-	promptflow_object = PromptFlow(**response.content)
+	process_description_string = str(process_description)
+	response = chain.run(messages = messages, input_variables = process_description_string)
+	promptflow_object = response.content
 	return promptflow_object
 
-# Main function
-# ----------------------------------------
-
-def main():
-	# Analyze the natural language description of the workflow
+def request_prompt_flow(natural_language_description: str) -> PromptFlow:
+	"""Our wrapper function."""
 	print("Analyzing the natural language description of the workflow...")
 	process_description = analyze_workflow_description(natural_language_description)
 	# Generate a PromptFlow object based on the ProcessDescription
@@ -451,9 +483,10 @@ def main():
 	print("Mermaid Diagram")
 	print("=====================================================\n")
 	print(generate_mermaid_diagram(promptflow_object))
+	return promptflow_object
+
+# Main function
+# ----------------------------------------
 
 if __name__ == "__main__":
-	main()
-
-# a completed result for testing purposes
-# process_description = ProcessDescription(**{'processDescription': 'The process involves generating 100 text-based courses for a company called Sophie Inc. These courses will be structured consistently, with each course containing approximately 4 chapters, 12-15 sections, and a total word count of 18,000-22,500 words. The courses will cover various topics in business and technology, targeting different professional audiences.', 'keyObjectives': ['Generate 100 text-based courses', 'Maintain consistent course structure across all courses', 'Cover a range of business and technology topics', 'Target specific professional audiences', 'Create content suitable for sale to large companies'], 'participantsAndRoles': ['Content creators: Responsible for writing and structuring the course material', 'Subject matter experts: Provide expertise in specific business and technology areas', 'Editors: Review and refine the course content', 'Project managers: Oversee the course creation process and ensure consistency', 'Sales team: Sell the courses to large companies'], 'decisionPoints': ['Selection of specific topics within each course category', 'Allocation of courses across different segments (e.g., 20 for Leadership and Management)', 'Determining the exact number of sections per chapter (3-4)', 'Finalizing the word count for each section (~1500 words)', 'Choosing which large companies to target for sales'], 'challengesOrIssues': ['Maintaining consistency in quality and structure across 100 courses', 'Ensuring content relevance for different professional audiences', 'Balancing depth and breadth of topics within word count constraints', 'Keeping content up-to-date, especially for technology-related courses', 'Differentiating courses from existing online learning platforms'], 'desiredOutcomes': ['Create a comprehensive library of 100 high-quality, structured courses', 'Attract large companies as customers for the course library', 'Meet the learning needs of various professional audiences', 'Establish Sophie Inc. as a reputable provider of business and technology education', 'Generate revenue through course sales to large companies'], 'additionalInformation': "Sophie Inc.'s course library will be divided into six segments: Leadership and Management (20 courses), Professional Development (15 courses), Business Functions (15 courses), Business software (10 courses), Software development (20 courses), and IT administration (20 courses). The courses are designed to address the needs of people managers, career changers, and professionals seeking to improve in their current roles."})
+	promptflow_object = request_prompt_flow(natural_language_description)
