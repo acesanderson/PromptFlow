@@ -15,14 +15,14 @@ The story
 # Import the necessary libraries
 # ----------------------------------------
 
-from Chain import Prompt, Chain, Model, Parser
+from Chain import Prompt, Chain, Model, Parser, create_system_message
 from pydantic import BaseModel
 from typing import List, Union
 import json
 
 # Anthropic excels at these sorts of tasks, and Claude Sonnet 3.5 is the strongest model released as of 6/23.
-preferred_model = "claude" 
-# preferred_model = "gpt" 
+preferred_model = "claude"
+# preferred_model = "gpt"
 
 complex_mermaid_example = """
 graph TD
@@ -325,69 +325,82 @@ processDescription_schema = """
 # Define Pydantic models for the processDescription and PromptFlow objects.
 # ----------------------------------------
 
+
 class ProcessDescription(BaseModel):
-	"""Model for the ProcessDescription object."""
-	processDescription: str
-	keyObjectives: List[str]
-	participantsAndRoles: List[str]
-	decisionPoints: List[str]
-	challengesOrIssues: List[str]
-	desiredOutcomes: List[str]
-	additionalInformation: str = None  # Optional field, not included in 'required'
+    """Model for the ProcessDescription object."""
+
+    processDescription: str
+    keyObjectives: List[str]
+    participantsAndRoles: List[str]
+    decisionPoints: List[str]
+    challengesOrIssues: List[str]
+    desiredOutcomes: List[str]
+    additionalInformation: str = None  # Optional field, not included in 'required'
+
 
 class StateDescription(BaseModel):
-	"""Model for the StateDescription object."""
-	state: str
-	description: str
+    """Model for the StateDescription object."""
+
+    state: str
+    description: str
+
 
 class Transition(BaseModel):
-	"""Model for the Transition object."""
-	currentState: str
-	event: str
-	nextState: str
+    """Model for the Transition object."""
+
+    currentState: str
+    event: str
+    nextState: str
+
 
 class PromptFlow(BaseModel):
-	"""Model for the PromptFlow object."""
-	workflowName: str
-	initialState: str
-	statesDescription: List[StateDescription]
-	transitions: List[Transition]
-	finalState: str
+    """Model for the PromptFlow object."""
+
+    workflowName: str
+    initialState: str
+    statesDescription: List[StateDescription]
+    transitions: List[Transition]
+    finalState: str
+
 
 # Our functions
 # ----------------------------------------
 
+
 def convert_json_to_promptflow(json_data: dict) -> PromptFlow:
-	"""Converts a JSON object to a PromptFlow object."""
-	return PromptFlow(**json_data)
+    """Converts a JSON object to a PromptFlow object."""
+    return PromptFlow(**json_data)
+
 
 def pretty(structured_data: Union[str, PromptFlow, ProcessDescription, dict]) -> str:
-	"""
-	Takes structured data (string, PromptFlow object, ProcessDescription object, or dictionary) 
-	and returns a pretty-printed string representation.
-	"""
-	if isinstance(structured_data, str):
-		try:
-			structured_data = json.loads(structured_data)
-		except json.JSONDecodeError:
-			return structured_data
-	
-	if isinstance(structured_data, (PromptFlow, ProcessDescription)):
-		# Convert Pydantic model to dict, handling nested Pydantic objects
-		def pydantic_to_dict(obj):
-			if isinstance(obj, BaseModel):
-				return {k: pydantic_to_dict(v) for k, v in obj.dict().items()}
-			elif isinstance(obj, list):
-				return [pydantic_to_dict(item) for item in obj]
-			else:
-				return obj
-		
-		structured_data = pydantic_to_dict(structured_data)
-	
-	if isinstance(structured_data, dict):
-		return json.dumps(structured_data, indent=2)
-	
-	raise ValueError("Unsupported type for pretty printing. Supported types: str, PromptFlow, ProcessDescription, dict")
+    """
+    Takes structured data (string, PromptFlow object, ProcessDescription object, or dictionary)
+    and returns a pretty-printed string representation.
+    """
+    if isinstance(structured_data, str):
+        try:
+            structured_data = json.loads(structured_data)
+        except json.JSONDecodeError:
+            return structured_data
+
+    if isinstance(structured_data, (PromptFlow, ProcessDescription)):
+        # Convert Pydantic model to dict, handling nested Pydantic objects
+        def pydantic_to_dict(obj):
+            if isinstance(obj, BaseModel):
+                return {k: pydantic_to_dict(v) for k, v in obj.dict().items()}
+            elif isinstance(obj, list):
+                return [pydantic_to_dict(item) for item in obj]
+            else:
+                return obj
+
+        structured_data = pydantic_to_dict(structured_data)
+
+    if isinstance(structured_data, dict):
+        return json.dumps(structured_data, indent=2)
+
+    raise ValueError(
+        "Unsupported type for pretty printing. Supported types: str, PromptFlow, ProcessDescription, dict"
+    )
 
 
 # def pretty(structured_data: Union[str, PromptFlow, ProcessDescription, dict]) -> str:
@@ -406,87 +419,105 @@ def pretty(structured_data: Union[str, PromptFlow, ProcessDescription, dict]) ->
 # 	else:
 # 		raise ValueError("Unsupported type for pretty printing. Supported types: str, PromptFlow, ProcessDescription, dict")
 
+
 def generate_mermaid_diagram(prompt_flow: PromptFlow) -> str:
-	"""
-	Generates a Mermaid diagram string for a given PromptFlow object.
+    """
+    Generates a Mermaid diagram string for a given PromptFlow object.
 
-	Args:
-	prompt_flow (PromptFlow): The PromptFlow object to visualize.
+    Args:
+    prompt_flow (PromptFlow): The PromptFlow object to visualize.
 
-	Returns:
-	str: A string containing the Mermaid diagram.
-	"""
-	def flatten(string):
-		"""
-		We need to replace spaces with underscores to diagram can render properly.
-		"""
-		return string.replace(" ", "_")
-	# Start the Mermaid diagram
-	diagram = "graph TD\n"
-	# Add states with descriptions as nodes
-	for state in prompt_flow.statesDescription:
-		# Each state node in Mermaid can have a text label which might include a description
-		diagram += f'    {flatten(state.state)}("{flatten(state.state)}: {flatten(state.description)}")\n'
-	# Define transitions
-	for transition in prompt_flow.transitions:
-		# Each transition in Mermaid is represented as an edge between nodes
-		line = f'    {flatten(transition.currentState)} -->|{flatten(transition.event)}| {flatten(transition.nextState)}'
-		diagram += line + '\n'
-	# Optionally, add a special style for the initial and final states
-	diagram += f'    style {flatten(prompt_flow.initialState)} fill:#f9f,stroke:#333,stroke-width:4px\n'
-	diagram += f'    style {flatten(prompt_flow.finalState)} fill:#ccf,stroke:#f66,stroke-width:2px\n'
-	return diagram
+    Returns:
+    str: A string containing the Mermaid diagram.
+    """
+
+    def flatten(string):
+        """
+        We need to replace spaces with underscores to diagram can render properly.
+        """
+        return string.replace(" ", "_")
+
+    # Start the Mermaid diagram
+    diagram = "graph TD\n"
+    # Add states with descriptions as nodes
+    for state in prompt_flow.statesDescription:
+        # Each state node in Mermaid can have a text label which might include a description
+        diagram += f'    {flatten(state.state)}("{flatten(state.state)}: {flatten(state.description)}")\n'
+    # Define transitions
+    for transition in prompt_flow.transitions:
+        # Each transition in Mermaid is represented as an edge between nodes
+        line = f"    {flatten(transition.currentState)} -->|{flatten(transition.event)}| {flatten(transition.nextState)}"
+        diagram += line + "\n"
+    # Optionally, add a special style for the initial and final states
+    diagram += f"    style {flatten(prompt_flow.initialState)} fill:#f9f,stroke:#333,stroke-width:4px\n"
+    diagram += f"    style {flatten(prompt_flow.finalState)} fill:#ccf,stroke:#f66,stroke-width:2px\n"
+    return diagram
+
 
 # Create Chains
 # ----------------------------------------
 
-def analyze_workflow_description(natural_language_description: str) -> ProcessDescription:
-	"""Analyzes a natural language description of a workflow and generates a ProcessDescription object."""
-	messages = Chain.create_messages(system_prompt = persona_workflow_analyst, input_variables = {'processDescription_schema': processDescription_schema})
-	prompt = Prompt(process_description_prompt)
-	model = Model(preferred_model)
-	parser = Parser(ProcessDescription)
-	chain = Chain(prompt, model, parser)
-	response = chain.run(messages = messages, input_variables = natural_language_description)
-	process_description_obj = response.content	
-	return process_description_obj
+
+def analyze_workflow_description(
+    natural_language_description: str,
+) -> ProcessDescription:
+    """Analyzes a natural language description of a workflow and generates a ProcessDescription object."""
+    messages = create_system_message(
+        system_prompt=persona_workflow_analyst,
+        input_variables={"processDescription_schema": processDescription_schema},
+    )
+    prompt = Prompt(process_description_prompt)
+    model = Model(preferred_model)
+    parser = Parser(ProcessDescription)
+    chain = Chain(prompt=prompt, model=model, parser=parser)
+    response = chain.run(
+        messages=messages, input_variables=natural_language_description
+    )
+    process_description_obj = response.content
+    return process_description_obj
+
 
 def generate_promptflow(process_description: ProcessDescription) -> PromptFlow:
-	"""Generates a PromptFlow object based on a ProcessDescription object."""
-	messages = Chain.create_messages(system_prompt = persona_promptflow_architect, input_variables = {'PromptFlow_schema': PromptFlow_schema})
-	prompt = Prompt(promptflow_prompt)
-	model = Model(preferred_model)
-	parser = Parser(PromptFlow)
-	chain = Chain(prompt, model, parser)
-	process_description_string = str(process_description)
-	response = chain.run(messages = messages, input_variables = process_description_string)
-	promptflow_object = response.content
-	return promptflow_object
+    """Generates a PromptFlow object based on a ProcessDescription object."""
+    messages = create_system_message(
+        system_prompt=persona_promptflow_architect,
+        input_variables={"PromptFlow_schema": PromptFlow_schema},
+    )
+    prompt = Prompt(promptflow_prompt)
+    model = Model(preferred_model)
+    parser = Parser(PromptFlow)
+    chain = Chain(prompt=prompt, model=model, parser=parser)
+    process_description_string = str(process_description)
+    response = chain.run(messages=messages, input_variables=process_description_string)
+    promptflow_object = response.content
+    return promptflow_object
+
 
 def request_prompt_flow(natural_language_description: str) -> PromptFlow:
-	"""Our wrapper function."""
-	print("Analyzing the natural language description of the workflow...")
-	process_description = analyze_workflow_description(natural_language_description)
-	# Generate a PromptFlow object based on the ProcessDescription
-	print("Our architect is now generating a PromptFlow object...")
-	promptflow_object = generate_promptflow(process_description)
-	# Show results
-	print("\n=====================================================")
-	print("Results")
-	print("=====================================================\n")
-	try:
-		print(pretty(promptflow_object))
-	except Exception as e:
-		print("Error printing the PromptFlow object.")
-		print(e)
-	print("\n=====================================================")
-	print("Mermaid Diagram")
-	print("=====================================================\n")
-	print(generate_mermaid_diagram(promptflow_object))
-	return promptflow_object
+    """Our wrapper function."""
+    print("Analyzing the natural language description of the workflow...")
+    process_description = analyze_workflow_description(natural_language_description)
+    # Generate a PromptFlow object based on the ProcessDescription
+    print("Our architect is now generating a PromptFlow object...")
+    promptflow_object = generate_promptflow(process_description)
+    # Show results
+    print("\n=====================================================")
+    print("Results")
+    print("=====================================================\n")
+    try:
+        print(pretty(promptflow_object))
+    except Exception as e:
+        print("Error printing the PromptFlow object.")
+        print(e)
+    print("\n=====================================================")
+    print("Mermaid Diagram")
+    print("=====================================================\n")
+    print(generate_mermaid_diagram(promptflow_object))
+    return promptflow_object
+
 
 # Main function
 # ----------------------------------------
 
 if __name__ == "__main__":
-	promptflow_object = request_prompt_flow(natural_language_description)
+    promptflow_object = request_prompt_flow(natural_language_description)
